@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text-html"; charset="utf-8" />
+		<title>DataVis</title>
+		<!---->
+		<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+		<script type="text/javascript" src="http://code.highcharts.com/highcharts.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	</head>
+	<body>
+		<div id="explicacao" style="text-align: center; ">
+			<h2>Qual o gênero com a maior "taxa de premiação"?</h2>
+			<div class="well">
+				<p class="lead">
+				Para respondê-la utilizamos umg gráfico de barra. Ele nos permite comparar de forma rápida a "taxa de premiação" de cada gênero. Essa taxa de premiação é calculada da seguinta forma:<br/><br/>
+				<b><i>taxaDePremiacao = (NumeroDeBaftas + NumeroDeOscars) /  NumeroDeFilmes</i></b><br/><br/>
+				Logo abaixo temos gráfico obtido utilizando o Highcharts. Nele podemos observar que o gênero com a maior "taxa de premiação" é Bibliografia. A maior dificuldade encontrada foi acrescentar detalhes para cada categoria (dificuldade que alias não foi superada...). Apesar disso, utilizar o Highcharts para fazer esse gráfico mostrou-se interessante. 
+
+				</p>
+				
+			</div>
+			<br/><br/>
+		</div>
+
+		<div id="container" style="width:100%; height:400px;"></div>
+			
+		<script type="text/javascript">
+			
+			$(document).ready(function(){
+				var chart = {
+						renderTo:'container',
+						type: 'bar',
+   						
+					}; 
+
+				var title =	{
+						text:'Gênero x Taxa de premiação'
+					};
+
+				var xAxis = {
+						title:{
+							text:'Gêneros'
+						},
+						categories:[]
+					};
+
+				var yAxis = {
+						title:{
+							text:'Taxa de premiação'
+						}
+				};
+				
+				
+
+				var options = {};
+				options.chart = chart;
+				options.title = title;
+				options.xAxis = xAxis;
+				options.yAxis = yAxis;
+				options.plotOptions = {            
+						bar:{
+							tooltip:{
+	                			headerFormat:'<b>{point.x}</b><br/>',
+	                			formatter:{
+	                				function(){
+	                					return "sfasd";
+	                				}
+	                			}
+	                		},
+	                		dataLabels: {
+                   				enabled: true
+                			}
+
+                		}
+	            	
+    
+            	}
+        		
+
+				var series = [];
+
+				$.get('moviesOriginal.csv', function(data){
+					var lines = data.split('\n');
+					var generos = {}; 
+					$.each(lines, function(lineNo, line){
+						if(lineNo != 0 && line !=""){
+							var items = line.match(/(".*?"|[^\s",][^",]+[^\s",])(?=\s*,|\s*$)/g);
+							var nomeDoGenero = items[8].replace(/\"/g, '');
+							
+							if(generos.hasOwnProperty(nomeDoGenero)){
+								generos[nomeDoGenero]['numeroDeRegistros']++;
+							}
+							else{
+								generos[nomeDoGenero] = {};
+								generos[nomeDoGenero]['numeroDeRegistros'] = 1;	
+								generos[nomeDoGenero]['numeroDePremiacoes'] = 0;
+							}
+
+							
+							if(parseFloat(items[0].replace(/\"/g, '')) > 0 || parseFloat(items[2].replace(/\"/g, '')) > 0){
+								generos[nomeDoGenero]['numeroDePremiacoes'] += parseFloat(items[0].replace(/\"/g, '')) + parseFloat(items[2].replace(/\"/g, '')); 	
+							}							
+						}
+					});
+
+					
+					var seriesGenres = {};
+					seriesGenres.data =  [];
+					seriesGenres.name = "Generos";
+					seriesGenres.NumeroDePremiacoes = [];
+					seriesGenres.NumeroDeRegistros = [];
+
+					for(var nomeDoGenero in generos){
+						if(!generos.hasOwnProperty(nomeDoGenero)) continue;
+						if(generos[nomeDoGenero]['numeroDePremiacoes'] > 0){
+							options.xAxis.categories.push(nomeDoGenero);
+
+							var xValue = (Math.floor((generos[nomeDoGenero]['numeroDePremiacoes']/generos[nomeDoGenero]['numeroDeRegistros'])*10000))/10000;
+							seriesGenres.data.push(xValue);
+							
+							seriesGenres.NumeroDeRegistros.push(generos[nomeDoGenero]['numeroDeRegistros']);
+							seriesGenres.NumeroDePremiacoes.push(generos[nomeDoGenero]['numeroDePremiacoes']);
+
+						}
+					}
+
+					series.push(seriesGenres);
+					options.series = series;
+					console.log(series);
+					var chart = new Highcharts.Chart(options);					
+				});				
+
+
+			});
+				
+				
+		</script>
+	</body>
+
+</html>
