@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text-html"; charset="utf-8" />
+		<title>DataVis</title>
+		<!---->
+		<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+		<script type="text/javascript" src="http://code.highcharts.com/highcharts.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	</head>
+	<body>
+		<div id="explicacao" style="text-align: center; ">
+			<h2>Existe alguma relação entre o lucro de um filme e a sua popularidade?</h2>
+			<div class="well">
+				<p class="lead">
+					Para responde essa pergunta utilizamos um gráfico de dispersão que tem como função nos ajudar a detectar correlações entre variáveis. Além de tentar responder essa pergunta, resolvemos marcar os filmes ganhadores de oscars ou brafta para verificar se isso tem alguma relação com o quão popular e lucrativos são esses filmes.<br/> 
+					Precisamos esclarecer o que aqui chamamos de popularidade. Esse valor é calculado da seguinte forma:
+					<br/><br/>
+					<b><i>popularidade = (AudienceScore + RottenTomatoes/100) / 2</i></b>
+					<br/><br/>
+					E como pode ser visto no grafico abaixo, não há relação alguma entre as variáveis investigadas. E não encontramos também dificuldade tão relevante para fazer esse gráfico. Também vale a pena ressaltar que achamos o gráfico produzido com o Highcharts esteticamente mais agradável do que o que obtivemos pelo Tableau.
+
+				</p>
+			</div>
+		<br/><br/>
+
+		<div id="container" style="width:100%; height:400px;"></div>
+			
+		<script type="text/javascript">
+			
+			$(document).ready(function(){
+
+
+				var chart = {
+						renderTo:'container',
+						type: 'scatter',
+   						zoomType: 'xy'
+					}; 
+
+				var title =	{
+						text:'Relação entre o Lucro e a Nota dada pelo público ao filme'
+					};
+				var xAxis = {
+						title:{
+							text:'(AudienceScore/100 + RottenTomatoes)/2'
+						}
+					};
+
+				var yAxis = {
+						title:{
+							text:'Lucro'
+						}
+					};
+				
+				
+				var options = {};
+				options.chart = chart;
+				options.title = title;
+				options.xAxis = xAxis;
+				options.yAxis = yAxis;
+				options.plotOptions = {            
+						scatter: {
+	                		tooltip:{
+	                			headerFormat:'<b>{point.point.name}</b><br/>',
+	                			pointFormat: '<b>Ano:</b> {point.year}<br/><b>Nota media do público:</b> {point.x} <br/><b>Lucro:</b> {point.y}'
+	                		},
+	            	    	enableMouseTracking: true
+        	    		}
+        		}
+
+				var series = [];
+				var comOscar = {
+					name: 'Filme premiado com Oscar ou Brafta',
+					data: []
+				};
+				var semOscar = {
+					name: 'Filme não premiado', 
+					data: []
+				};
+
+				/*
+				var comOscar = {
+					name: "Ganhador de Oscar ou Bafta",
+					data: [{name: "a", x:2, y: 2}, {name: "b", x:4, y: 2}]
+				}
+				var semOscar = {
+					name: "Nao premiado",
+					data: [{name: "c", x:6, y: 3}]
+				}
+				*/
+				
+				$.get('moviesOriginal.csv', function(data){
+					var lines = data.split('\n');
+					$.each(lines, function(lineNo, line){
+						if(lineNo != 0 && line !=""){
+							//var items = line.split(',');
+							console.log(lineNo);
+							console.log(line);
+							var items = line.match(/(".*?"|[^\s",][^",]+[^\s",])(?=\s*,|\s*$)/g);
+							var filme = {};
+							
+							filme.name = items[6].replace(/\"/g, '');
+							console.log(filme.name);
+
+							filme.year = items[11].replace(/\"/g, '');
+
+							filme.y = parseFloat(items[16].replace(/\"/g, ''));
+							console.log(filme.y);
+							
+							var audienceScore = parseFloat(items[12].replace(/\"/g, ''))/100;
+							var rottenTomatoes = parseFloat(items[21].replace(/\"/g, ''));
+
+							filme.x = Math.floor(((audienceScore + rottenTomatoes)/2)*1000)/1000;
+							console.log(filme.x);
+							
+							if(parseFloat(items[0].replace(/\"/g, ''))>0 || parseFloat(items[2].replace(/\"/g, '')) > 0){
+								comOscar.data.push(filme);
+							}
+							else{
+								semOscar.data.push(filme);
+							}
+						}
+					});
+
+					series.push(comOscar);
+					series.push(semOscar);
+					options.series = series;
+					var chart = new Highcharts.Chart(options);
+
+					
+				});				
+
+
+			});
+				
+				
+		</script>
+	</body>
+
+</html>
