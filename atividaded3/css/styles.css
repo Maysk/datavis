@@ -1,0 +1,80 @@
+body {
+    font-family: "helvetica"
+}
+
+.box {
+    width: 200px;
+    height: 200px;
+    margin: 40px;
+    float: left;
+    text-align: center;
+    border: #969696 solid thin;
+    padding: 5px;
+}
+
+.blue {
+    background-color: #add8e6;
+    color: #f0f8ff;
+}
+
+.red {
+    background-color: #e9967a;
+    color: #f0f8ff;
+}
+
+h1 {
+    color: #3F3F3F;
+}
+
+
+span {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: normal;      
+}
+
+.chartRegion {
+    width: 80%;
+    margin-left: 2px;
+    margin-bottom: 15px; 
+}
+
+.h-bar {
+    min-height: 25px;
+    min-width: 10px;
+    background-color: steelblue;
+    margin-bottom: 5px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #f0f8ff;
+    text-align: right;
+    padding-right: 5px;
+    line-height: 25px;
+    
+}
+
+#chart1 .h-bar {
+    background-color: #2D882D;
+}
+
+#chart2 .h-bar{
+    background-color: #AA3939;   
+}
+
+#chart3 .h-bar{
+    background-color: #7A9F35;   
+}
+
+
+
+.v-bar {
+    min-height: 1px;
+    min-width: 30px;
+    background-color: #4682b4;
+    margin-right: 2px;
+    font-size: 10px;
+    color: #f0f8ff;
+    text-align: center;
+    width: 10px;
+    display: inline-block;
+}

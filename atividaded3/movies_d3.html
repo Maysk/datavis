@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text-html"; charset="utf-8" />
+    <title>Movies with D3.js</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+</head>
+<body>
+	<div class="page-header"><h1>Atividade envolvendo d3.js</h1></div>
+	<p class = "lead" style="margin-right:5px; margin-left:5px">Um ponto interessante sobre os gráficos abaixo: o tamanho de cada uma das barras é relativo ao tamanho da "barra de tamanho máximo" daquele gráfico. Isso foi feito para que o gráfico possa se ajustar melhor a telas menores</p>
+	<br/>
+	<small><a href="../index.html">Voltar</a></small> 
+	</p>
+	<p class="well lead">Grafico de barras ordenado da maior para a menor bilheteria.<br/> 
+	<div id="chart1"></div>
+
+	<p class="well lead">Grafico de barras ordenado da maior para o menor orcamento.</p>	
+	<div id="chart2"></div>
+
+	<p class="well lead">Grafico de barras ordenado da maior para o menor lucro.</p>		
+	<div id="chart3"></div>
+
+	<script type="text/javascript">
+		function render(data){
+				renderBarChart1(data, comparadorBilheteria);
+				renderBarChart2(data, comparadorOrcamento);
+				renderBarChart3(data, comparadorLucro);
+		}
+
+		function renderBarChart1(data, comparator){
+			//Enter
+			var max = valorMaximoDoAtributo("Worldwide_Gross_M", data);
+
+			var enterSelection = d3.select("#chart1")
+									.attr("class", "chartRegion")
+									.selectAll("div.h-bar")
+                					.data(data)
+            						.enter();
+			
+			var div = enterSelection.append("div").attr("class", "h-bar").style("width", "10px");
+            
+            div.append("span");
+
+            //Exit
+			d3.select("#chart1").selectAll("div.h-bar")
+				            .data(data)
+        					.exit().remove();
+
+			//Update      
+        	d3.select("#chart1").selectAll("div.h-bar")
+                .data(data)
+            	.attr("class", "h-bar")
+            	.style("width", function (d) {
+                	return (d.Worldwide_Gross_M/max)*100 + "%";
+            	})
+            	.select("span")
+                .text(function (d) {
+                    return d.Film;
+                });
+
+         	if(comparator)
+            	d3.select("#chart1")
+                	.selectAll("div.h-bar") 
+                	.sort(comparator);
+
+		}
+
+		function renderBarChart2(data, comparator){
+			//Enter
+			var max = valorMaximoDoAtributo("Budget_M", data);
+
+			var enterSelection = d3.select("#chart2")
+									.attr("class", "chartRegion")
+									.selectAll("div.h-bar")
+                					.data(data)
+            						.enter();
+			
+			var div = enterSelection.append("div").attr("class", "h-bar").style("width", "10px");
+            
+            div.append("span");
+
+            //Exit
+			d3.select("#chart2").selectAll("div.h-bar")
+				            .data(data)
+        					.exit().remove();
+
+			//Update      
+        	d3.select("#chart2").selectAll("div.h-bar")
+                .data(data)
+            	.attr("class", "h-bar")
+            	.style("width", function (d) {
+                	return (d.Budget_M/max)*100 + "%";
+            	})
+            	.select("span")
+                .text(function (d) {
+                    return d.Film;
+                });
+
+         	if(comparator)
+            	d3.select("#chart2")
+                	.selectAll("div.h-bar") 
+                	.sort(comparator);
+
+		}
+        
+		function renderBarChart3(data, comparator){
+			//Enter
+			var max = valorMaximoDoAtributo("Worldwide_Gross_M", data) - valorMaximoDoAtributo("Budget_M", data);
+
+			var enterSelection = d3.select("#chart3")
+									.attr("class", "chartRegion")
+									.selectAll("div.h-bar")
+                					.data(data)
+            						.enter();
+			
+			var div = enterSelection.append("div").attr("class", "h-bar").style("width", "10px");
+            
+            div.append("span");
+
+            //Exit
+			d3.select("#chart3").selectAll("div.h-bar")
+				            .data(data)
+        					.exit().remove();
+   
+   			//Update
+        	d3.select("#chart3").selectAll("div.h-bar")
+                .data(data)
+            	.attr("class", "h-bar")
+            	.style("width", function (d) {
+                	return (d.Worldwide_Gross_M - d.Budget_M)/max*100 + "%";
+            	})
+            	.select("span")
+                .text(function (d) {
+                    return d.Film;
+                });
+
+         	if(comparator)
+            	d3.select("#chart3")
+                	.selectAll("div.h-bar") 
+                	.sort(comparator);
+		}
+        
+		function valorMaximoDoAtributo(attrName, data){
+			var max = data[0][attrName];
+
+			for (var i = 0; i< data.length; i++) {
+				if(data[i][attrName] > max){
+					max = data[i][attrName];
+				}
+			};
+			
+			return max;
+		}
+
+		var comparadorBilheteria = function (a, b){
+			return a.Worldwide_Gross_M > b.Worldwide_Gross_M ? -1:1;  
+		}
+
+		var comparadorOrcamento = function (a, b){
+			return a.Budget_M > b.Budget_M ? -1:1;
+		}
+
+		var comparadorLucro = function (a, b){
+			return (a.Worldwide_Gross_M - a.Budget_M) > (b.Worldwide_Gross_M -  b.Budget_M)? -1:1;
+		}
+
+		d3.json("movies.json", function(error, json){render(json);});
+
+	</script>
+
+</body>
+</html>
