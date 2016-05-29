@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Visualização relacionada aos homicídios ocorridos em Fortaleza no ano 2012</title>
+	<meta charset="UTF-8"> 
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+	<style>
+			#map {
+				width: 750px;
+				height: 600px;
+			}
+			.info {
+				padding: 6px 8px;
+				font: 14px/16px Arial, Helvetica, sans-serif;
+				background: white;
+				background: rgba(255,255,255,0.8);
+				box-shadow: 0 0 15px rgba(0,0,0,0.2);
+				border-radius: 5px;
+			}
+			.info h4 {
+				margin: 0 0 5px;
+				color: #777;
+			}
+
+			.legend {
+				text-align: left;
+				line-height: 18px;
+				color: #555;
+			}
+			.legend i {
+				width: 18px;
+				height: 18px;
+				float: left;
+				margin-right: 8px;
+				opacity: 0.7;
+			}
+		</style>
+</head>
+<body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>	
+<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="https://d3js.org/colorbrewer.v1.min.js"></script>
+
+<div class="container">
+	<h2> Visualização relacionada aos homicídios ocorridos em Fortaleza (2012)</h2>
+	<small><a href="../index.html">Voltar</a></small>
+	<p>
+		Dados retirados do <a href="http://www.sspds.ce.gov.br/">SSPDS</a>.
+	</p>	
+    <div class="row">
+        <div class="span12" id="map">
+			<strong>Homicídios por Bairro</strong>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="bairros.js"></script>
+<script type="text/javascript">
+    
+    var accessToken = "pk.eyJ1IjoibWF0aGV1c21heXJvbiIsImEiOiJjaW9zbnNjb28wMDk2dHptNXdlNXJwbmwyIn0.NFmud2-halLqiEHkJ6raDQ";
+	var map = L.map('map').setView([-3.792614,-38.515877], 12);
+	//http://{s}.tile.osm.org/{z}/{x}/{y}.png
+	L.tileLayer("https://api.mapbox.com/styles/v1/mapbox/dark-v9/tiles/{z}/{x}/{y}?access_token="+accessToken,
+			{
+				attribution: '&copy; <a href="http://www.openstreetmap.org/">OpenStreetMap</a> contributors', 
+				maxZoom: 17
+			}
+		).addTo(map);
+	
+	// control that shows state info on hover
+	var info = L.control();
+
+	info.onAdd = function (map) {
+		this._div = L.DomUtil.create('div', 'info');
+		this.update();
+		return this._div;
+	};
+
+	info.update = function (feat) {
+                //console.log(props);
+				this._div.innerHTML = '' +  
+					(feat ?
+						'<p class="lead">' + feat.properties.name + '</p>'+
+						'<b>Taxa de homicídios (por mil hab.):</b> ' + homicidiosById.get(feat.id)[2].toLocaleString() +
+						'<br/> <b>Qtd. de Homicídios:</b> ' + homicidiosById.get(feat.id)[0].toLocaleString() +
+						'<br/> <b>População total:</b> ' + homicidiosById.get(feat.id)[1].toLocaleString() 
+						
+ 						: '<h4>Passe o mouse sobre um bairro</h4>');
+			};
+
+	info.addTo(map);
+	
+
+	function style(feature) {
+		 return {
+					weight: 2,
+					opacity: 0.5,
+					color: 'white',
+					dashArray: '4',
+					fillOpacity: 0.6,
+					fillColor: quantize(homicidiosById.get(feature.id)[2])
+				};
+	}
+
+	function highlightFeature(e) {
+		var layer = e.target;
+        console.log(e.target)
+
+		layer.setStyle({
+					weight: 3,
+					color: '#665',
+					dashArray: '',
+					fillOpacity: 0.7
+		});
+
+		if (!L.Browser.ie && !L.Browser.opera) {
+			layer.bringToFront();
+		}
+
+		info.update(layer.feature);
+	}
+
+	var geojson;
+
+	function resetHighlight(e) {
+		geojson.resetStyle(e.target);
+		info.update();
+	}
+
+	function zoomToFeature(e) {
+		map.fitBounds(e.target.getBounds());
+	}
+
+	function onEachFeature(feature, layer) {
+		layer.on({
+					mouseover: highlightFeature,
+					mouseout: resetHighlight,
+					click: zoomToFeature
+				});
+	}
+
+    var homicidiosById = d3.map();   
+
+	d3.csv("BairrosHomicidiosPop.csv", function(data){
+        //format data
+        
+
+        data.forEach(function(d) {
+        	var nDeHomicidio = +d.homicidios;
+        	
+        	var popTotal = +d.populacaototal.replace(".",""); //Populacao por mil
+        	
+        	var coef = Math.floor((nDeHomicidio / (popTotal/1000))*1000)/1000;
+
+            homicidiosById.set(d.id,[nDeHomicidio, popTotal, coef]);
+        });
+		
+
+		geojson = L.geoJson(bairrosData, {
+				style: style,
+				onEachFeature: onEachFeature
+		}).addTo(map);
+		
+	});
+
+	var quantize = d3.scale.quantize()
+						.domain([0, 3])
+						.range(['#ffffb2','#fecc5c','#fd8d3c','#e31a1c']);
+		 		
+
+	var legend = L.control({position: 'bottomright'});
+
+
+
+	legend.onAdd = function (map) {
+
+		var div = L.DomUtil.create('div', 'info legend'),
+			grades = [0, 3],
+			labels = [],
+            n = 9,
+			from, to;
+
+		var colors = ['#ffffb2','#fecc5c','#fd8d3c','#e31a1c'];
+		for (var i = 0; i < colors.length; i++) {
+			var c = colors;
+            var fromto = quantize.invertExtent(c[i]);
+            console.log(fromto);
+			labels.push(
+				'<i style="background:' + colors[i] + '"></i> ' +
+				fromto[0].toFixed(2) + (i != colors.length-1 ? ' &ndash; ' + fromto[1].toFixed(2) : ' +'));
+		}
+
+		div.innerHTML = labels.join('<br>');
+		return div;
+	};
+
+   	legend.addTo(map);
+</script>
+
+</body>
+</html>
